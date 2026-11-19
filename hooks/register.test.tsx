@@ -22,17 +22,26 @@ const markdownTexts = async (ui: { findAll: (q: { type: string }) => Promise<{ p
   (await ui.findAll({ type: 'Markdown' })).map(found => found.props.text)
 
 test('the main screen draws colored titles and cuts a long info section', async $ => {
-  for (const surface of ['terminal', 'desktop'] as const) {
-    const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface })
+  const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface: 'terminal' })
 
-    expect((await ui.find({ type: 'Text', text: /^Failures$/ }))?.props.color).toBe('error')
-    expect((await ui.find({ type: 'Text', text: /^Facts$/ }))?.props.color).toBe('suggestion')
+  expect((await ui.find({ type: 'Text', text: /^Failures$/ }))?.props.color).toBe('error')
+  expect((await ui.find({ type: 'Text', text: /^Facts$/ }))?.props.color).toBe('suggestion')
+  expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
+  expect(await markdownTexts(ui)).toContain('- npm test failed in 2 cases')
+  expect(await markdownTexts(ui)).toContain(
+    Array.from({ length: 6 }, (_, n) => `- fact ${n + 1}`).join('\n'),
+  )
+  expect(await ui.find({ type: 'Text', text: /\+4 lines \(ctrl\+o to expand\)/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the desktop draws every section open, with no button', async $ => {
+  for (const isFullscreen of [false, true]) {
+    const ui = await $.ui.mount({ ...makeSut(REPLY, isFullscreen), surface: 'desktop' })
+
     expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
-    expect(await markdownTexts(ui)).toContain('- npm test failed in 2 cases')
-    expect(await markdownTexts(ui)).toContain(
-      Array.from({ length: 6 }, (_, n) => `- fact ${n + 1}`).join('\n'),
-    )
-    expect(await ui.find({ type: 'Text', text: /\+4 lines \(ctrl\+o to expand\)/ })).toBeDefined()
+    expect((await markdownTexts(ui)).some(text => String(text).includes('- fact 10'))).toBe(true)
+    expect(await ui.find({ type: 'Text', text: /\+\d+ lines/ })).toBeUndefined()
     await ui.unmount()
   }
 })

@@ -118,7 +118,8 @@ export const register: Register = on => {
     }
 
     const { Box, Button, Markdown, Text } = $.ui.resolve(e)
-    const isClickable = e.viewport?.isFullscreen === true
+    const isTerminal = e.surface === 'terminal'
+    const isClickable = isTerminal && e.viewport?.isFullscreen === true
     const opened = isClickable ? await read($, openSections) : {}
     const columns = e.viewport?.columns ?? 80
     const prefaceNode = preface
@@ -133,7 +134,7 @@ export const register: Register = on => {
           const key = `${e.requestId}:${color}`
           const lines = section.body ? section.body.split('\n') : []
           const isLong = lines.length > PREVIEW_LINES
-          const isOpenByDefault = !(section.marker === '🔵' && isLong)
+          const isOpenByDefault = !(isTerminal && section.marker === '🔵' && isLong)
           const isOpen = opened[key] ?? isOpenByDefault
           const rule = '─'.repeat(Math.max(3, columns - section.title.length - 8))
           const label = [
