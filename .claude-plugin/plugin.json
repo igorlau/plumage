@@ -2,11 +2,31 @@
   "author": {
     "name": "igorlau"
   },
-  "description": "Groups Claude Code replies under severity headings and draws them as colored, collapsible sections.",
+  "description": "Redraws the Claude Code terminal: each turn as a timeline, replies grouped by severity, a band of failures and risks, and a Monokai theme.",
   "homepage": "https://github.com/igorlau/plumage#readme",
   "license": "MIT",
   "name": "plumage",
   "repository": "https://github.com/igorlau/plumage",
   "types": "./types/index.d.ts",
-  "version": "0.2.0"
+  "userConfig": {
+    "band": {
+      "default": true,
+      "description": "Show the failures, risks, and question of the last reply above the prompt.",
+      "title": "Band above the prompt",
+      "type": "boolean"
+    },
+    "sections": {
+      "default": true,
+      "description": "Group replies under severity headings and draw them as colored sections.",
+      "title": "Severity sections",
+      "type": "boolean"
+    },
+    "timeline": {
+      "default": true,
+      "description": "Draw each turn as a timeline: your prompt, each tool call, the reply, and a closing summary on one vertical line.",
+      "title": "Turn timeline",
+      "type": "boolean"
+    }
+  },
+  "version": "0.3.0"
 }

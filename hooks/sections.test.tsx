@@ -85,6 +85,17 @@ test('the context always gets the heading rule', async ($, on) => {
   const result = await $.prompt.context({ blocks })
 
   expect(result.blocks.map(block => block.name)).toEqual(['claudeMd', 'severitySections'])
+  expect(result.blocks[1]?.text).toMatch(/questions to the user as plain text before the groups/)
+})
+
+test('the sections option turns off the rule and the drawing', { options: { sections: false, timeline: false } }, async ($, on) => {
+  on('prompt.context', () => ({ blocks: [] }))
+
+  expect((await $.prompt.context({ blocks: [] })).blocks).toEqual([])
+
+  const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface: 'terminal' })
+  expect(await ui.findAll({ type: 'Markdown' })).toHaveLength(0)
+  await ui.unmount()
 })
 
 test('two groups of one kind draw as one section', async ($, on) => {
@@ -118,7 +129,7 @@ test('the cut of a long section never leaves a code block open', async ($, on) =
   await ui.unmount()
 })
 
-test('the terminal draws the reply bullet when the reply opens with a section', async ($, on) => {
+test('without the timeline, the terminal draws the reply bullet when the reply opens with a section', { options: { timeline: false } }, async ($, on) => {
   answerSessionInfo(on)
   for (const [text, bullets] of [['🔴 **Failures**\n- a', 1], ['Done.\n\n🔴 **Failures**\n- a', 0]] as const) {
     const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
@@ -128,7 +139,7 @@ test('the terminal draws the reply bullet when the reply opens with a section', 
   }
 })
 
-test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
+test('without the timeline, a reply without markers keeps the engine drawing', { options: { timeline: false } }, async $ => {
   for (const text of ['plain reply', '```\n🔴 not a heading\n```']) {
     const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
 
@@ -136,4 +147,16 @@ test('a reply without markers, or with markers only in code, keeps the engine dr
     expect(await ui.find({ type: 'Text', text: /▌/ })).toBeUndefined()
     await ui.unmount()
   }
+})
+
+test('the timeline draws each section as a node with a glyph and no rule', async ($, on) => {
+  answerSessionInfo(on)
+  const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface: 'terminal' })
+
+  expect((await ui.find({ type: 'Text', text: /^✗ $/ }))?.props.color).toBe('error')
+  expect((await ui.find({ type: 'Text', text: /^• $/ }))?.props.color).toBe('suggestion')
+  expect(await ui.findAll({ type: 'Text', text: /^├$/ })).toHaveLength(3)
+  expect(await ui.find({ type: 'Text', text: /^─+$/ })).toBeUndefined()
+  expect(await markdownTexts(ui)).toContain('Done.')
+  await ui.unmount()
 })

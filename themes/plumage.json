@@ -1,0 +1,13 @@
+{
+  "base": "dark",
+  "name": "Plumage",
+  "overrides": {
+    "claude": "#fd971f",
+    "claudeShimmer": "#ffc07a",
+    "error": "#ff5c8f",
+    "promptBorder": "#8a8570",
+    "success": "#a6e22e",
+    "suggestion": "#66d9ef",
+    "warning": "#e6db74"
+  }
+}
