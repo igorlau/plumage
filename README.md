@@ -118,6 +118,13 @@ claude plugin validate .
 claude plugin test .
 ```
 
+## Release
+
+1. Change `version` in `.claude-plugin/plugin.json`.
+2. Commit the change as `chore: release <version>`, and push it to `main`.
+
+The `Release` workflow then creates the tag `v<version>` and a GitHub release. The release notes list the commit subjects since the last tag. If the tag exists, the workflow does nothing. To run the workflow again, start it from the **Actions** tab.
+
 ## Limits
 
 - The severity shows by color. Read the title of a section to know its severity if you do not see colors well.

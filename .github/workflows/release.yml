@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [.claude-plugin/plugin.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Release the version in plugin.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(jq -r .version .claude-plugin/plugin.json)
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag exists, nothing to release"
+            exit 0
+          fi
+
+          previous=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          git log --no-merges --format='- %s' "${previous:+$previous..}HEAD" \
+            | grep -v '^- chore: release' > notes.md || true
+          if [ ! -s notes.md ]; then
+            echo "- No changes since ${previous:-the first commit}." > notes.md
+          fi
+
+          gh release create "$tag" --target "$GITHUB_SHA" --title "plumage $version" --notes-file notes.md
