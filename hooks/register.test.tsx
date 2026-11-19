@@ -1,4 +1,5 @@
 import { expect, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
 
 const REPLY = [
   'Done.',
@@ -18,10 +19,24 @@ const makeSut = (text: string, isFullscreen: boolean) => ({
   viewport: { columns: 60, isFullscreen, rows: 30 },
 })
 
+const answerSessionInfo = (on: Parameters<TestBody>[1]) =>
+  on('session.info', () => ({
+    value: {
+      machine: 'x86_64',
+      packageManagers: [],
+      platform: 'linux',
+      release: '',
+      runtimes: [],
+      sysname: 'Linux',
+      transcriptPath: '',
+    },
+  }))
+
 const markdownTexts = async (ui: { findAll: (q: { type: string }) => Promise<{ props: Record<string, unknown> }[]> }) =>
   (await ui.findAll({ type: 'Markdown' })).map(found => found.props.text)
 
-test('the main screen draws colored titles and cuts a long info section', async $ => {
+test('the main screen draws colored titles and cuts a long info section', async ($, on) => {
+  answerSessionInfo(on)
   const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface: 'terminal' })
 
   expect((await ui.find({ type: 'Text', text: /^Failures$/ }))?.props.color).toBe('error')
@@ -35,7 +50,8 @@ test('the main screen draws colored titles and cuts a long info section', async 
   await ui.unmount()
 })
 
-test('the desktop draws every section open, with no button', async $ => {
+test('the desktop draws every section open, with no button', async ($, on) => {
+  answerSessionInfo(on)
   for (const isFullscreen of [false, true]) {
     const ui = await $.ui.mount({ ...makeSut(REPLY, isFullscreen), surface: 'desktop' })
 
@@ -46,7 +62,8 @@ test('the desktop draws every section open, with no button', async $ => {
   }
 })
 
-test('fullscreen opens and closes a section with a click on its title', async $ => {
+test('fullscreen opens and closes a section with a click on its title', async ($, on) => {
+  answerSessionInfo(on)
   const ui = await $.ui.mount({ ...makeSut(REPLY, true), surface: 'terminal' })
 
   expect(await ui.find({ type: 'Text', text: /\+10 lines \(click the title\)/ })).toBeDefined()
@@ -70,7 +87,8 @@ test('the context always gets the heading rule', async ($, on) => {
   expect(result.blocks.map(block => block.name)).toEqual(['claudeMd', 'severitySections'])
 })
 
-test('two groups of one kind draw as one section', async $ => {
+test('two groups of one kind draw as one section', async ($, on) => {
+  answerSessionInfo(on)
   const text = ['🔴 **Test failures**', '- 2 tests failed', '', '🔴 **Lint failures**', '- 3 lint errors'].join('\n')
   const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
 
@@ -80,7 +98,8 @@ test('two groups of one kind draw as one section', async $ => {
   await ui.unmount()
 })
 
-test('sections draw in the order failures, results, risks, facts', async $ => {
+test('sections draw in the order failures, results, risks, facts', async ($, on) => {
+  answerSessionInfo(on)
   const text = ['🔵 **Facts**', '- a', '🟡 **Risks**', '- b', '🟢 **Results**', '- c', '🔴 **Failures**', '- d'].join('\n')
   const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
 
@@ -89,13 +108,24 @@ test('sections draw in the order failures, results, risks, facts', async $ => {
   await ui.unmount()
 })
 
-test('the cut of a long section never leaves a code block open', async $ => {
+test('the cut of a long section never leaves a code block open', async ($, on) => {
+  answerSessionInfo(on)
   const text = ['🔵 **Facts**', '- a', '- b', '- c', '- d', '```', 'one', 'two', 'three', '```'].join('\n')
   const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
 
   expect(await markdownTexts(ui)).toEqual(['- a\n- b\n- c\n- d'])
   expect(await ui.find({ type: 'Text', text: /\+5 lines/ })).toBeDefined()
   await ui.unmount()
+})
+
+test('the terminal draws the reply bullet when the reply opens with a section', async ($, on) => {
+  answerSessionInfo(on)
+  for (const [text, bullets] of [['🔴 **Failures**\n- a', 1], ['Done.\n\n🔴 **Failures**\n- a', 0]] as const) {
+    const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
+
+    expect(await ui.findAll({ type: 'Text', text: /^[⏺●]$/ })).toHaveLength(bullets)
+    await ui.unmount()
+  }
 })
 
 test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {

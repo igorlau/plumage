@@ -126,68 +126,92 @@ export const register: Register = on => {
       ? await next({ ...e, props: { ...e.props, text: preface } })
       : null
 
+    const sectionNodes = sections.map((section, index) => {
+      const color = COLORS[section.marker]
+      const key = `${e.requestId}:${color}`
+      const lines = section.body ? section.body.split('\n') : []
+      const isLong = lines.length > PREVIEW_LINES
+      const isOpenByDefault = !(isTerminal && section.marker === '🔵' && isLong)
+      const isOpen = opened[key] ?? isOpenByDefault
+      const label = [
+        <Text color={color}>▌ </Text>,
+        <Text bold color={color}>
+          {section.title}
+        </Text>,
+      ]
+      const closedLines = isClickable ? 0 : previewLength(lines)
+      const shownLines = isOpen ? lines.length : closedLines
+      const shownBody = lines.slice(0, shownLines).join('\n')
+      const hiddenLines = lines.length - shownLines
+      const hint = isClickable ? 'click the title' : 'ctrl+o to expand'
+
+      return (
+        <Box flexDirection="column" marginTop={index > 0 ? 1 : 0}>
+          <Box>
+            <Box flexShrink={0}>
+              {isClickable ? (
+                <Button
+                  key={key}
+                  plain
+                  onPress={() =>
+                    update($, openSections, all => ({
+                      ...all,
+                      [key]: !(all[key] ?? isOpenByDefault),
+                    }))
+                  }
+                >
+                  {label}
+                </Button>
+              ) : (
+                <Text>{label}</Text>
+              )}
+            </Box>
+            <Box flexGrow={1} height={1} marginLeft={1} overflow="hidden">
+              <Text dimColor>{'─'.repeat(columns)}</Text>
+            </Box>
+          </Box>
+          {shownBody && (
+            <Box paddingLeft={2}>
+              <Markdown text={shownBody} />
+            </Box>
+          )}
+          {hiddenLines > 0 && (
+            <Box paddingLeft={2}>
+              <Text dimColor>
+                … +{hiddenLines} lines ({hint})
+              </Text>
+            </Box>
+          )}
+        </Box>
+      )
+    })
+    const sectionList = (
+      <Box flexDirection="column" flexGrow={1} marginTop={prefaceNode ? 1 : 0}>
+        {sectionNodes}
+      </Box>
+    )
+    if (!isTerminal) {
+      return (
+        <Box flexDirection="column">
+          {prefaceNode}
+          {sectionList}
+        </Box>
+      )
+    }
+
+    const hasBullet = e.props.isFirstOfReply && !prefaceNode
+    const platform = hasBullet ? (await $.session.info()).platform : undefined
+    const bullet = platform === 'macos' ? '⏺' : '●'
+
     return (
       <Box flexDirection="column">
         {prefaceNode}
-        {sections.map((section, index) => {
-          const color = COLORS[section.marker]
-          const key = `${e.requestId}:${color}`
-          const lines = section.body ? section.body.split('\n') : []
-          const isLong = lines.length > PREVIEW_LINES
-          const isOpenByDefault = !(isTerminal && section.marker === '🔵' && isLong)
-          const isOpen = opened[key] ?? isOpenByDefault
-          const label = [
-            <Text color={color}>▌ </Text>,
-            <Text bold color={color}>
-              {section.title}
-            </Text>,
-          ]
-          const closedLines = isClickable ? 0 : previewLength(lines)
-          const shownLines = isOpen ? lines.length : closedLines
-          const shownBody = lines.slice(0, shownLines).join('\n')
-          const hiddenLines = lines.length - shownLines
-          const hint = isClickable ? 'click the title' : 'ctrl+o to expand'
-
-          return (
-            <Box flexDirection="column" marginTop={index > 0 || prefaceNode ? 1 : 0}>
-              <Box>
-                <Box flexShrink={0}>
-                  {isClickable ? (
-                    <Button
-                      key={key}
-                      plain
-                      onPress={() =>
-                        update($, openSections, all => ({
-                          ...all,
-                          [key]: !(all[key] ?? isOpenByDefault),
-                        }))
-                      }
-                    >
-                      {label}
-                    </Button>
-                  ) : (
-                    <Text>{label}</Text>
-                  )}
-                </Box>
-                <Box flexGrow={1} height={1} marginLeft={1} overflow="hidden">
-                  <Text dimColor>{'─'.repeat(columns)}</Text>
-                </Box>
-              </Box>
-              {shownBody && (
-                <Box paddingLeft={2}>
-                  <Markdown text={shownBody} />
-                </Box>
-              )}
-              {hiddenLines > 0 && (
-                <Box paddingLeft={2}>
-                  <Text dimColor>
-                    … +{hiddenLines} lines ({hint})
-                  </Text>
-                </Box>
-              )}
-            </Box>
-          )
-        })}
+        <Box>
+          <Box flexShrink={0} width={2}>
+            <Text>{hasBullet ? bullet : ' '}</Text>
+          </Box>
+          {sectionList}
+        </Box>
       </Box>
     )
   })
