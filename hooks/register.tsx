@@ -15,6 +15,7 @@ const HEADING_RULE = [
   'In a reply to the user, group failures, results, skipped checks or risks, and neutral facts.',
   'Start each group with a heading line: 🔴 for failures, 🟢 for results, 🟡 for skipped checks and risks, 🔵 for neutral facts, then a short label, such as "🔴 **Failures**".',
   'Write the content of each group as a short list under its heading line.',
+  'Write at most one group of each kind, and put the groups at the end of the reply.',
   'Put the groups in that order, with a blank line between them. Leave out a group that has no content.',
   'The terminal draws each group as a colored section.',
 ].join('\n')
