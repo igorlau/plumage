@@ -42,11 +42,11 @@ test('fullscreen opens and closes a section with a click on its title', async $ 
 
   expect(await ui.find({ type: 'Text', text: /\+10 lines \(click the title\)/ })).toBeDefined()
 
-  await ui.press({ key: 'msg-1:1' })
+  await ui.press({ key: 'msg-1:suggestion' })
   expect(await ui.find({ type: 'Text', text: /click the title/ })).toBeUndefined()
   expect((await markdownTexts(ui)).some(text => String(text).includes('- fact 10'))).toBe(true)
 
-  await ui.press({ key: 'msg-1:0' })
+  await ui.press({ key: 'msg-1:error' })
   expect(await markdownTexts(ui)).not.toContain('- npm test failed in 2 cases')
   expect(await ui.find({ type: 'Text', text: /\+1 lines/ })).toBeDefined()
   await ui.unmount()
@@ -59,6 +59,16 @@ test('the context always gets the heading rule', async ($, on) => {
   const result = await $.prompt.context({ blocks })
 
   expect(result.blocks.map(block => block.name)).toEqual(['claudeMd', 'severitySections'])
+})
+
+test('two groups of one kind draw as one section', async $ => {
+  const text = ['🔴 **Test failures**', '- 2 tests failed', '', '🔴 **Lint failures**', '- 3 lint errors'].join('\n')
+  const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
+
+  expect(await ui.findAll({ type: 'Text', text: /^Test failures$/ })).toHaveLength(1)
+  expect(await ui.find({ type: 'Text', text: /^Lint failures$/ })).toBeUndefined()
+  expect(await markdownTexts(ui)).toEqual(['- 2 tests failed\n\n**Lint failures**\n- 3 lint errors'])
+  await ui.unmount()
 })
 
 test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
