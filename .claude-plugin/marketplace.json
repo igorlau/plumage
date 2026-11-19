@@ -1,0 +1,13 @@
+{
+  "description": "Visual mods for Claude Code.",
+  "name": "plumage",
+  "owner": {
+    "name": "igorlau"
+  },
+  "plugins": [
+    {
+      "name": "plumage",
+      "source": "./"
+    }
+  ]
+}

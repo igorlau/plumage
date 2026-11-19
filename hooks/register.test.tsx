@@ -1,0 +1,81 @@
+import { expect, test } from 'claude-code/testing'
+
+const REPLY = [
+  'Done.',
+  '',
+  '🔴 **Failures**',
+  '- npm test failed in 2 cases',
+  '',
+  '🔵 **Facts**',
+  ...Array.from({ length: 10 }, (_, n) => `- fact ${n + 1}`),
+].join('\n')
+
+const makeSut = (text: string, isFullscreen: boolean) => ({
+  component: 'AssistantMessage' as const,
+  plugin: 'plumage',
+  props: { isFirstOfReply: true, text },
+  requestId: 'msg-1',
+  viewport: { columns: 60, isFullscreen, rows: 30 },
+})
+
+const markdownTexts = async (ui: { findAll: (q: { type: string }) => Promise<{ props: Record<string, unknown> }[]> }) =>
+  (await ui.findAll({ type: 'Markdown' })).map(found => found.props.text)
+
+test('the main screen draws colored titles and cuts a long info section', async $ => {
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...makeSut(REPLY, false), surface })
+
+    expect((await ui.find({ type: 'Text', text: /^Failures$/ }))?.props.color).toBe('error')
+    expect((await ui.find({ type: 'Text', text: /^Facts$/ }))?.props.color).toBe('suggestion')
+    expect(await ui.findAll({ type: 'Button' })).toHaveLength(0)
+    expect(await markdownTexts(ui)).toContain('- npm test failed in 2 cases')
+    expect(await markdownTexts(ui)).toContain(
+      Array.from({ length: 6 }, (_, n) => `- fact ${n + 1}`).join('\n'),
+    )
+    expect(await ui.find({ type: 'Text', text: /\+4 lines \(ctrl\+o to expand\)/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('fullscreen opens and closes a section with a click on its title', async $ => {
+  const ui = await $.ui.mount({ ...makeSut(REPLY, true), surface: 'terminal' })
+
+  expect(await ui.find({ type: 'Text', text: /\+10 lines \(click the title\)/ })).toBeDefined()
+
+  await ui.press({ key: 'msg-1:1' })
+  expect(await ui.find({ type: 'Text', text: /click the title/ })).toBeUndefined()
+  expect((await markdownTexts(ui)).some(text => String(text).includes('- fact 10'))).toBe(true)
+
+  await ui.press({ key: 'msg-1:0' })
+  expect(await markdownTexts(ui)).not.toContain('- npm test failed in 2 cases')
+  expect(await ui.find({ type: 'Text', text: /\+1 lines/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the context gets the heading rule only when no block has it', async ($, on) => {
+  const contexts = [
+    { blocks: [{ name: 'claudeMd', text: 'Use tabs.' }], added: 1 },
+    { blocks: [{ name: 'claudeMd', text: 'Group under 🔴, 🟢, 🟡, or 🔵 headings.' }], added: 0 },
+  ]
+
+  let engineBlocks = contexts[0]!.blocks
+  on('prompt.context', () => ({ blocks: engineBlocks }))
+
+  for (const { blocks, added } of contexts) {
+    engineBlocks = blocks
+    const result = await $.prompt.context({ blocks })
+
+    expect(result.blocks).toHaveLength(blocks.length + added)
+    expect(result.blocks.some(block => block.name === 'severitySections')).toBe(added === 1)
+  }
+})
+
+test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
+  for (const text of ['plain reply', '```\n🔴 not a heading\n```']) {
+    const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
+
+    expect(await ui.findAll({ type: 'Markdown' })).toHaveLength(0)
+    expect(await ui.find({ type: 'Text', text: /▌/ })).toBeUndefined()
+    await ui.unmount()
+  }
+})

@@ -1,0 +1,12 @@
+{
+  "author": {
+    "name": "igorlau"
+  },
+  "description": "Groups Claude Code replies under severity headings and draws them as colored, collapsible sections.",
+  "homepage": "https://github.com/igorlau/plumage#readme",
+  "license": "MIT",
+  "name": "plumage",
+  "repository": "https://github.com/igorlau/plumage",
+  "types": "./types/index.d.ts",
+  "version": "0.1.0"
+}
