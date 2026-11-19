@@ -11,7 +11,6 @@ const COLORS = {
 type Marker = keyof typeof COLORS
 type Section = { body: string; marker: Marker; title: string }
 
-const MARKERS = Object.keys(COLORS)
 const HEADING_RULE = [
   'In a reply to the user, group failures, results, skipped checks or risks, and neutral facts.',
   'Start each group with a heading line: 🔴 for failures, 🟢 for results, 🟡 for skipped checks and risks, 🔵 for neutral facts, then a short label, such as "🔴 **Failures**".',
@@ -79,12 +78,6 @@ const parse = (text: string) => {
 export const register: Register = on => {
   on('prompt.context', async ($, e, next) => {
     const result = await next(e)
-    const hasHeadingRule = result.blocks.some(block =>
-      MARKERS.every(marker => block.text.includes(marker)),
-    )
-    if (hasHeadingRule) {
-      return result
-    }
 
     return {
       ...result,

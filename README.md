@@ -14,7 +14,7 @@ The mod changes only the drawing. The stored conversation and the text that the 
 
 ## How Claude learns the headings
 
-At the start of each conversation, the mod reads the context blocks, such as your `CLAUDE.md` files. If no block mentions all four circle emoji, the mod adds a short block with the heading rule. If your own instructions already have such a rule, the mod adds nothing.
+At the start of each conversation, the mod adds the heading rule to the context of Claude.
 
 The context is set once for each conversation. After you install the mod, the rule applies to the next conversation, or after `/clear` or a compaction.
 
