@@ -3,13 +3,15 @@ import type { Register } from 'claude-code'
 
 const COLORS = {
   '🔴': 'error',
-  '🟡': 'warning',
   '🟢': 'success',
+  '🟡': 'warning',
   '🔵': 'suggestion',
 } as const
 
 type Marker = keyof typeof COLORS
 type Section = { body: string; marker: Marker; title: string }
+
+const ORDER = Object.keys(COLORS) as Marker[]
 
 const HEADING_RULE = [
   'In a reply to the user, group failures, results, skipped checks or risks, and neutral facts.',
@@ -73,11 +75,14 @@ const parse = (text: string) => {
 
   return {
     preface: trimBlankLines(preface),
-    sections: [...groups].map<Section>(([marker, { lines, title }]) => ({
-      body: trimBlankLines(lines),
-      marker,
-      title,
-    })),
+    sections: ORDER.flatMap<Section>(marker => {
+      const group = groups.get(marker)
+      if (!group) {
+        return []
+      }
+
+      return [{ body: trimBlankLines(group.lines), marker, title: group.title }]
+    }),
   }
 }
 

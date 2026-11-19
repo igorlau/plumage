@@ -71,6 +71,15 @@ test('two groups of one kind draw as one section', async $ => {
   await ui.unmount()
 })
 
+test('sections draw in the order failures, results, risks, facts', async $ => {
+  const text = ['🔵 **Facts**', '- a', '🟡 **Risks**', '- b', '🟢 **Results**', '- c', '🔴 **Failures**', '- d'].join('\n')
+  const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
+
+  const titles = await ui.findAll({ type: 'Text', text: /^(Facts|Risks|Results|Failures)$/ })
+  expect(titles.map(found => found.text)).toEqual(['Failures', 'Results', 'Risks', 'Facts'])
+  await ui.unmount()
+})
+
 test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
   for (const text of ['plain reply', '```\n🔴 not a heading\n```']) {
     const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
