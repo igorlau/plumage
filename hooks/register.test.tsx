@@ -52,22 +52,13 @@ test('fullscreen opens and closes a section with a click on its title', async $ 
   await ui.unmount()
 })
 
-test('the context gets the heading rule only when no block has it', async ($, on) => {
-  const contexts = [
-    { blocks: [{ name: 'claudeMd', text: 'Use tabs.' }], added: 1 },
-    { blocks: [{ name: 'claudeMd', text: 'Group under 🔴, 🟢, 🟡, or 🔵 headings.' }], added: 0 },
-  ]
+test('the context always gets the heading rule', async ($, on) => {
+  const blocks = [{ name: 'claudeMd', text: 'Group under 🔴, 🟢, 🟡, or 🔵 headings.' }]
+  on('prompt.context', () => ({ blocks }))
 
-  let engineBlocks = contexts[0]!.blocks
-  on('prompt.context', () => ({ blocks: engineBlocks }))
+  const result = await $.prompt.context({ blocks })
 
-  for (const { blocks, added } of contexts) {
-    engineBlocks = blocks
-    const result = await $.prompt.context({ blocks })
-
-    expect(result.blocks).toHaveLength(blocks.length + added)
-    expect(result.blocks.some(block => block.name === 'severitySections')).toBe(added === 1)
-  }
+  expect(result.blocks.map(block => block.name)).toEqual(['claudeMd', 'severitySections'])
 })
 
 test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
