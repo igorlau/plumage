@@ -6,7 +6,7 @@ A Claude Code mod that draws the replies of Claude as colored sections, grouped 
 
 - Claude groups the facts of a reply under four heading lines: failures, results, skipped checks or risks, and neutral facts. Each heading line starts with a red, green, yellow, or blue circle emoji.
 - The mod draws each group as a section: a colored bar, a bold title, and a rule to the right margin. The body has an indent of 2 columns and keeps its Markdown.
-- In the fullscreen terminal, a click on a title opens or closes its section.
+- In the fullscreen terminal, a click on a title opens or closes its section. The desktop app draws every section open.
 - On the main screen, a neutral-facts section with more than 6 lines shows its first 6 lines. Press `ctrl+o` to see the full reply.
 - A reply with no heading lines draws as Claude Code draws it.
 
