@@ -39,7 +39,8 @@ const cleanTitle = (raw: string) =>
 
 const parse = (text: string) => {
   const preface: string[] = []
-  const sections: { lines: string[]; marker: Marker; title: string }[] = []
+  const groups = new Map<Marker, { lines: string[]; title: string }>()
+  let current = preface
   let isInFence = false
 
   for (const line of text.split('\n')) {
@@ -48,27 +49,31 @@ const parse = (text: string) => {
     }
 
     const heading = isInFence ? null : HEADING.exec(line)
-    if (heading) {
-      sections.push({
-        lines: [],
-        marker: heading[1] as Marker,
-        title: cleanTitle(heading[2] ?? ""),
-      })
+    if (!heading) {
+      current.push(line)
       continue
     }
 
-    const current = sections.at(-1)
-    if (!current) {
-      preface.push(line)
+    const marker = heading[1] as Marker
+    const title = cleanTitle(heading[2] ?? '')
+    const group = groups.get(marker)
+    if (!group) {
+      const created = { lines: [] as string[], title }
+      groups.set(marker, created)
+      current = created.lines
       continue
     }
 
-    current.lines.push(line)
+    while (group.lines.at(-1)?.trim() === '') {
+      group.lines.pop()
+    }
+    group.lines.push('', ...(title ? [`**${title}**`] : []))
+    current = group.lines
   }
 
   return {
     preface: trimBlankLines(preface),
-    sections: sections.map<Section>(({ lines, marker, title }) => ({
+    sections: [...groups].map<Section>(([marker, { lines, title }]) => ({
       body: trimBlankLines(lines),
       marker,
       title,
@@ -108,8 +113,8 @@ export const register: Register = on => {
       <Box flexDirection="column">
         {prefaceNode}
         {sections.map((section, index) => {
-          const key = `${e.requestId}:${index}`
           const color = COLORS[section.marker]
+          const key = `${e.requestId}:${color}`
           const lines = section.body ? section.body.split('\n') : []
           const isLong = lines.length > PREVIEW_LINES
           const isOpenByDefault = !(section.marker === '🔵' && isLong)
