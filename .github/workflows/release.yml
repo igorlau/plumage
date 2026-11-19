@@ -17,6 +17,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Claude Code
+        run: npm install --global @anthropic-ai/claude-code@2.1.328
+
+      - name: Validate the plugin
+        run: claude plugin validate .
+
+      - name: Test the plugin
+        run: claude plugin test .
+
       - name: Release the version in plugin.json
         env:
           GH_TOKEN: ${{ github.token }}
