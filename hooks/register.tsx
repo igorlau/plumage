@@ -136,7 +136,6 @@ export const register: Register = on => {
           const isLong = lines.length > PREVIEW_LINES
           const isOpenByDefault = !(isTerminal && section.marker === '🔵' && isLong)
           const isOpen = opened[key] ?? isOpenByDefault
-          const rule = '─'.repeat(Math.max(3, columns - section.title.length - 8))
           const label = [
             <Text color={color}>▌ </Text>,
             <Text bold color={color}>
@@ -152,23 +151,27 @@ export const register: Register = on => {
           return (
             <Box flexDirection="column" marginTop={index > 0 || prefaceNode ? 1 : 0}>
               <Box>
-                {isClickable ? (
-                  <Button
-                    key={key}
-                    plain
-                    onPress={() =>
-                      update($, openSections, all => ({
-                        ...all,
-                        [key]: !(all[key] ?? isOpenByDefault),
-                      }))
-                    }
-                  >
-                    {label}
-                  </Button>
-                ) : (
-                  <Text>{label}</Text>
-                )}
-                <Text dimColor> {rule}</Text>
+                <Box flexShrink={0}>
+                  {isClickable ? (
+                    <Button
+                      key={key}
+                      plain
+                      onPress={() =>
+                        update($, openSections, all => ({
+                          ...all,
+                          [key]: !(all[key] ?? isOpenByDefault),
+                        }))
+                      }
+                    >
+                      {label}
+                    </Button>
+                  ) : (
+                    <Text>{label}</Text>
+                  )}
+                </Box>
+                <Box flexGrow={1} height={1} marginLeft={1} overflow="hidden">
+                  <Text dimColor>{'─'.repeat(columns)}</Text>
+                </Box>
               </Box>
               {shownBody && (
                 <Box paddingLeft={2}>
