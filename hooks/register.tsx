@@ -33,6 +33,17 @@ const openSections = atom(
   { shape: 'open-sections-1' },
 )
 
+const previewLength = (lines: string[]) => {
+  let openFence = -1
+  for (const [index, line] of lines.slice(0, PREVIEW_LINES).entries()) {
+    if (FENCE.test(line)) {
+      openFence = openFence === -1 ? index : -1
+    }
+  }
+
+  return openFence === -1 ? PREVIEW_LINES : openFence
+}
+
 const trimBlankLines = (lines: string[]) =>
   lines.join('\n').replace(/^\s*\n/, '').trimEnd()
 
@@ -131,7 +142,7 @@ export const register: Register = on => {
               {section.title}
             </Text>,
           ]
-          const closedLines = isClickable ? 0 : PREVIEW_LINES
+          const closedLines = isClickable ? 0 : previewLength(lines)
           const shownLines = isOpen ? lines.length : closedLines
           const shownBody = lines.slice(0, shownLines).join('\n')
           const hiddenLines = lines.length - shownLines

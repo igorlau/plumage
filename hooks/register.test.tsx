@@ -80,6 +80,15 @@ test('sections draw in the order failures, results, risks, facts', async $ => {
   await ui.unmount()
 })
 
+test('the cut of a long section never leaves a code block open', async $ => {
+  const text = ['🔵 **Facts**', '- a', '- b', '- c', '- d', '```', 'one', 'two', 'three', '```'].join('\n')
+  const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
+
+  expect(await markdownTexts(ui)).toEqual(['- a\n- b\n- c\n- d'])
+  expect(await ui.find({ type: 'Text', text: /\+5 lines/ })).toBeDefined()
+  await ui.unmount()
+})
+
 test('a reply without markers, or with markers only in code, keeps the engine drawing', async $ => {
   for (const text of ['plain reply', '```\n🔴 not a heading\n```']) {
     const ui = await $.ui.mount({ ...makeSut(text, false), surface: 'terminal' })
